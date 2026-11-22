@@ -7,6 +7,8 @@ struct ReportsView: View {
     @Query(sort: \SpendingCategory.displayOrder) private var categories: [SpendingCategory]
     @Query(sort: \PaymentMethod.createdAt) private var methods: [PaymentMethod]
     @Query private var settings: [AppSettings]
+    @Query private var splitShares: [TransactionSplit]
+    @Query private var splitLedger: [SplitLedgerEntry]
     @State private var model = ReportsViewModel()
 
     private var currency: String { settings.first?.preferredCurrencyCode ?? CurrencyMath.defaultCode }
@@ -19,7 +21,8 @@ struct ReportsView: View {
                                    systemImage: "chart.bar.xaxis",
                                    message: "Reports are calculated from your recorded transactions. Add income or expenses to see them here.")
                 } else {
-                    let snap = model.snapshot(records: transactions.map(\.record), currencyCode: currency, finance: app.finance)
+                    let snap = model.snapshot(records: SplitMath.personalRecords(transactions.map(\.record), splits: splitShares.map(\.value),
+                                                                         ledger: splitLedger.map(\.value)), currencyCode: currency, finance: app.finance)
                     ScrollView {
                         VStack(spacing: Theme.spacing) {
                             periodPicker

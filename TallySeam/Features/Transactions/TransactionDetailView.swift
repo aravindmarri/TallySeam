@@ -45,6 +45,7 @@ struct TransactionDetailView: View {
             if let receiptId = t.receiptId {
                 receiptSection(receiptId)
             }
+            TransactionSplitSection(record: record)
             if let notes = t.notes, !notes.isEmpty {
                 Section("Notes") { Text(notes) }
             }

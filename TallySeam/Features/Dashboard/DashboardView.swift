@@ -10,6 +10,8 @@ struct DashboardView: View {
     @Query private var settings: [AppSettings]
     @Query private var paymentMethods: [PaymentMethod]
     @Query private var statementLines: [StatementTransaction]
+    @Query private var splitShares: [TransactionSplit]
+    @Query private var splitLedger: [SplitLedgerEntry]
     @State private var showAccountSetup = false
     @State private var showCheckIn = false
     @State private var model = DashboardViewModel()
@@ -18,7 +20,9 @@ struct DashboardView: View {
     private var currency: String { settings.first?.preferredCurrencyCode ?? CurrencyMath.defaultCode }
 
     var body: some View {
-        let records = transactions.map(\.record)
+        let allRecords = transactions.map(\.record)
+        // Split expenses count only the user's share; repayments received aren't income.
+        let records = SplitMath.personalRecords(allRecords, splits: splitShares.map(\.value), ledger: splitLedger.map(\.value))
         let summary = model.summary(records: records, currencyCode: currency, finance: app.finance)
         let monthTransactions = transactions.filter { model.range.contains($0.record.reportingDate(in: app.finance.calendar)) }
         let categoryByID = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0) })
@@ -36,8 +40,9 @@ struct DashboardView: View {
                     }
                     quickActions
                     NetWorthCard(currencyCode: currency) { showCheckIn = true }
+                    OwedToMeCard(currencyCode: currency)
                     if paymentMethods.isEmpty { accountSetupPrompt }
-                    if !statementLines.isEmpty { verifiedSpendingCard(records) }
+                    if !statementLines.isEmpty { verifiedSpendingCard(allRecords) }
                     spendingSection(records: records, categories: categories)
                     cashFlowSection(records: records)
                     budgetsSection(records: records, categoryByID: categoryByID)

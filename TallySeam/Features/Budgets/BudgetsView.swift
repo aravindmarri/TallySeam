@@ -8,6 +8,8 @@ struct BudgetsView: View {
     @Query private var transactions: [MoneyTransaction]
     @Query(sort: \SpendingCategory.displayOrder) private var categories: [SpendingCategory]
     @Query private var settings: [AppSettings]
+    @Query private var splitShares: [TransactionSplit]
+    @Query private var splitLedger: [SplitLedgerEntry]
     @State private var month = Calendar.current.monthRange(containing: .now).start
     @State private var editing: BudgetEditorRoute?
 
@@ -33,7 +35,8 @@ struct BudgetsView: View {
     }
 
     private var list: some View {
-        let progress = app.budgetCalculator.progress(budgets: budgets.map(\.record), records: transactions.map(\.record), month: month)
+        let progress = app.budgetCalculator.progress(budgets: budgets.map(\.record), records: SplitMath.personalRecords(transactions.map(\.record), splits: splitShares.map(\.value),
+                                                                                                  ledger: splitLedger.map(\.value)), month: month)
         let names = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0.name) })
         let paused = budgets.filter { !$0.isActive }
         return List {

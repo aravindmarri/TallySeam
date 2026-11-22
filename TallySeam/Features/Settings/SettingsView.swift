@@ -13,6 +13,7 @@ struct SettingsView: View {
                     NavigationLink { BillsView() } label: { Label("Recurring Bills", systemImage: "calendar.badge.clock") }
                     NavigationLink { BudgetsView() } label: { Label("Budgets", systemImage: "gauge.with.dots.needle.33percent") }
                     NavigationLink { InvestmentsView() } label: { Label("Investments", systemImage: "chart.line.uptrend.xyaxis") }
+                    NavigationLink { SplitsView() } label: { Label("Splits", systemImage: "person.2") }
                 }
                 if let s = settings.first {
                     PreferencesSection(settings: s)
