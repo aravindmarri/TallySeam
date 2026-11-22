@@ -76,12 +76,18 @@ NETWORK_APIS = re.compile(
     r"|\bimport\s+(Network|CloudKit|WebKit)\b|https?://")
 
 
+# The only web addresses allowed: the developer's own pages on the About screen. A SwiftUI Link hands
+# the address to Safari; the app itself makes no network request.
+ALLOWED_LINKS = re.compile(
+    r'^\s*Link\(destination: URL\(string: "https://(aravindmarri\.com|blogs\.aravindmarri\.com|github\.com/aravindmarri)"\)!\) \{$')
+
+
 def check_offline(path: pathlib.Path, errors: list) -> None:
     """Scans every line except pure comment lines (string literals are included on purpose)."""
     for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         if line.lstrip().startswith("//"):
             continue
-        if NETWORK_APIS.search(line):
+        if NETWORK_APIS.search(line) and not ALLOWED_LINKS.match(line):
             errors.append(f"{path.relative_to(ROOT)}:{n}: network or cloud API in app code: {line.strip()}")
 
 
