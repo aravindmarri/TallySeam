@@ -76,9 +76,9 @@ enum DocumentClassifier {
 // MARK: - Money and dates in free text
 
 enum MoneyText {
-    /// Amounts with cents, as printed on statements: "1,234.56", "-45.00", "(12.00)", "$8.10", "8.10 CR", "8.10-".
+    /// Amounts with cents, as printed on statements: "1,234.56", "-45.00", "- $45.00", "(12.00)", "$8.10", "8.10 CR", "8.10-".
     private static let regex = try! NSRegularExpression(
-        pattern: #"(?<![\w.,])\(?[-−]?\$?[-−]?(?:\d{1,3}(?:,\d{3})+|\d+)\.\d{2}\)?(?:\s?(?:CR|DR)\b|-(?![\d]))?"#,
+        pattern: #"(?<![\w.,])\(?(?:[-−]\s?(?=\$)|[-−])?\$?[-−]?(?:\d{1,3}(?:,\d{3})+|\d+)\.\d{2}\)?(?:\s?(?:CR|DR)\b|-(?![\d]))?"#,
         options: [.caseInsensitive])
 
     struct Token: Equatable, Sendable {
@@ -173,11 +173,11 @@ enum StatementHeaderExtractor {
     private static let labels: [(WritableKeyPath<StatementHeader, Int64?>, [String])] = [
         (\.openingBalance, ["beginning balance", "opening balance", "previous balance", "balance forward", "starting balance", "prior balance"]),
         (\.closingBalance, ["ending balance", "closing balance", "new balance", "statement balance"]),
-        (\.totalDeposits, ["deposits and other additions", "deposits and other credits", "total deposits", "deposits and credits"]),
-        (\.totalWithdrawals, ["withdrawals and other subtractions", "withdrawals and other debits", "total withdrawals",
+        (\.totalDeposits, ["deposits/additions", "deposits and other additions", "deposits and other credits", "total deposits", "deposits and credits"]),
+        (\.totalWithdrawals, ["withdrawals/subtractions", "withdrawals and other subtractions", "withdrawals and other debits", "total withdrawals",
                               "checks and other debits", "withdrawals and debits"]),
-        (\.totalPaymentsAndCredits, ["payments and other credits", "payments and credits", "payments credits"]),
-        (\.totalPurchases, ["purchases and adjustments", "total purchases", "purchases"]),
+        (\.totalPaymentsAndCredits, ["payments/credits", "payments and other credits", "payments and credits", "payments credits"]),
+        (\.totalPurchases, ["purchases and adjustments", "total purchases", "new charges", "purchases"]),
         (\.totalFees, ["fees charged", "total fees", "total fees charged"]),
         (\.totalInterest, ["interest charged", "total interest", "interest charge"]),
         (\.minimumPayment, ["minimum payment due", "minimum amount due", "minimum payment"]),
@@ -224,6 +224,12 @@ enum StatementHeaderExtractor {
                 h.periodEnd = dates[0]
                 h.periodStart = calendar.date(byAdding: DateComponents(month: -1, day: 1), to: dates[0])
             }
+        }
+
+        // No period printed: use a statement date near the top (e.g. "November 6, 2026   Page 1 of 6").
+        if h.periodEnd == nil,
+           let d = head.prefix(10).lazy.compactMap({ MoneyText.fullDates(in: $0, calendar: calendar).first }).first {
+            h.periodEnd = d
         }
 
         for line in head where line.lowercased().contains("due date") {
@@ -401,7 +407,7 @@ enum StatementLineParser {
                                      "additions", "money in", "paid in"]
     private static let outSections = ["withdrawals", "electronic withdrawals", "other withdrawals", "atm", "checks", "debits",
                                       "other debits", "purchases", "fees", "interest charged", "charges", "money out", "paid out",
-                                      "card transactions", "subtractions"]
+                                      "card transactions", "subtractions", "new charges"]
 
     /// A short line with no date and no amount that names a section of the statement:
     /// `.some(direction)` for a heading, `.some(nil)` for a heading that mixes both, nil for any other line.
@@ -437,6 +443,38 @@ enum StatementLineParser {
         return direction == .moneyIn ? .deposit : .withdrawal
     }
 
+    /// Column headings and per-cardholder headings ("Trans Date Post Date Description Amount",
+    /// "JANE DOE #1234: Transactions"). Never part of a description.
+    static func isTableHeading(_ line: String) -> Bool {
+        let n = " " + MerchantName.normalize(line) + " "
+        if n.contains(" date ") && (n.contains(" amount ") || n.contains(" description ")) { return true }
+        if n.contains(" continued on ") || n.contains(" continued from ") { return true }
+        return n.hasSuffix(" transactions ") || n.hasSuffix(" activity ")
+    }
+
+    /// Words in a bank description that say which way money moved, used only to break ties.
+    static func directionHint(_ description: String) -> StatementDirection? {
+        let d = " " + MerchantName.normalize(description) + " "
+        if [" zelle from ", " payroll ", " direct dep ", " deposit ", " refund ", " interest paid ", " transfer from "].contains(where: d.contains) {
+            return .moneyIn
+        }
+        if [" zelle to ", " withdrawal ", " fee ", " pmt ", " payment ", " purchase ", " transfer to ", " billpay "].contains(where: d.contains) {
+            return .moneyOut
+        }
+        return nil
+    }
+
+    /// A dated line whose text can't start a transaction: a date range ("Sep 13, 2026 - Oct 13, 2026"),
+    /// a bare date, a page header ("November 6, 2026  Page 1 of 6") or a sentence ("11/18/26. This date…").
+    static func isNonTransactionText(_ rest: String) -> Bool {
+        let t = rest.trimmingCharacters(in: .whitespaces)
+        guard let c = t.first else { return true }
+        if !(c.isLetter || c.isNumber || c == "*" || c == "#" || c == "&") { return true }
+        let lower = t.lowercased()
+        // Rate tables ("05/02/2026 11/03/2026 11.99% $0.00") are not transactions either.
+        return lower.hasPrefix("page ") || t.contains("%")
+    }
+
     static func parse(text: DocumentText, kind: FinancialDocumentKind, header: StatementHeader, calendar: Calendar,
                       referenceDate: Date = .now) -> StatementParseResult {
         let isCard = kind == .creditCardStatement
@@ -447,7 +485,7 @@ enum StatementLineParser {
         for page in text.pages {
             var section: StatementDirection? = nil
             var current: ParsedStatementLine? = nil
-            var pendingNoAmount: (parts: (DateParts, DateParts?), text: String, line: Int, description: String)? = nil
+            var pendingNoAmount: (parts: (DateParts, DateParts?), text: String, line: Int, description: String, extra: Int)? = nil
             var continuation = 0
 
             func flush() {
@@ -471,6 +509,7 @@ enum StatementLineParser {
                     flush()
                     let lowerRest = rest.lowercased()
                     if summaryWords.contains(where: lowerRest.contains) { continue }
+                    if isNonTransactionText(rest) { continue }
                     let tokens = MoneyText.tokens(in: rest, currencyCode: header.currencyCode)
                     guard let first = resolve(d1, periodEnd: periodEnd, calendar: calendar) else {
                         issues.append(StatementParseIssue(page: page.index + 1, line: lineNumber, text: line, reason: "The date isn't a real calendar date"))
@@ -478,7 +517,7 @@ enum StatementLineParser {
                     }
                     let second = d2.flatMap { resolve($0, periodEnd: periodEnd, calendar: calendar) }
                     if tokens.isEmpty {
-                        pendingNoAmount = ((d1, d2), line, lineNumber, rest.trimmingCharacters(in: .whitespaces))
+                        pendingNoAmount = ((d1, d2), line, lineNumber, rest.trimmingCharacters(in: .whitespaces), 0)
                         continue
                     }
                     // Bank lines often end with the running balance; card lines end with the amount.
@@ -508,8 +547,9 @@ enum StatementLineParser {
                     continue
                 }
                 let tokens = MoneyText.tokens(in: line, currencyCode: header.currencyCode)
-                if let p = pendingNoAmount, let last = tokens.last, line.count <= 80 {
-                    // The amount was printed on the next line (wrapped description or OCR output).
+                let heading = isTableHeading(line)
+                if let p = pendingNoAmount, let last = tokens.last, line.count <= 80, !heading {
+                    // The amount was printed below the description (wrapped description or OCR output).
                     let t = !isCard && tokens.count >= 2 ? tokens[tokens.count - 2] : last
                     let balance: Int64? = !isCard && tokens.count >= 2 ? last.value : nil
                     let desc = p.description + " " + (tokens.first.map { String(line[line.startIndex..<$0.range.lowerBound]) } ?? "")
@@ -521,10 +561,18 @@ enum StatementLineParser {
                         postingDate: p.parts.1.flatMap { resolve($0, periodEnd: periodEnd, calendar: calendar) },
                         description: desc.trimmingCharacters(in: .whitespaces), amountMinorUnits: abs(t.value), direction: direction,
                         runningBalance: balance, kind: classify(description: desc, direction: direction, isCard: isCard),
-                        isPending: false, confidence: min(confidence, .medium), note: note ?? "Amount was on the following line")
+                        isPending: false, confidence: min(confidence, .medium), note: note ?? "Amount was below the description")
                     continue
                 }
-                if var c = current, tokens.isEmpty, continuation < 3, line.count <= 80,
+                if var p = pendingNoAmount, tokens.isEmpty, p.extra < 3, line.count <= 80, !heading,
+                   !summaryWords.contains(where: line.lowercased().contains) {
+                    // More description before the amount (e.g. city and merchant type on their own lines).
+                    p.description += " " + line
+                    p.extra += 1
+                    pendingNoAmount = p
+                    continue
+                }
+                if var c = current, tokens.isEmpty, continuation < 3, line.count <= 80, !heading,
                    !summaryWords.contains(where: line.lowercased().contains) {
                     // A description that wrapped onto the next line.
                     c.description += " " + line
@@ -537,7 +585,57 @@ enum StatementLineParser {
             }
             flush()
         }
+        if !isCard { applyRunningBalances(&lines, openingBalance: header.openingBalance) }
         return StatementParseResult(lines: lines, issues: issues)
+    }
+
+    /// Bank statements with separate deposit and withdrawal columns print no sign, and the text
+    /// loses the columns. The running balance settles it: between two printed balances, the lines
+    /// must add up to the change. When exactly one choice of in/out does, it is used.
+    static func applyRunningBalances(_ lines: inout [ParsedStatementLine], openingBalance: Int64?) {
+        guard var previous = openingBalance else { return }
+        var groupStart = 0
+        for i in lines.indices {
+            guard let balance = lines[i].runningBalance else { continue }
+            let group = Array(groupStart...i)
+            groupStart = i + 1
+            let delta = balance - previous
+            previous = balance
+            guard group.count <= 16 else { continue }
+            var solutions: [Int] = []
+            for mask in 0..<(1 << group.count) {
+                var sum: Int64 = 0
+                for (bit, index) in group.enumerated() {
+                    sum += (mask >> bit) & 1 == 1 ? lines[index].amountMinorUnits : -lines[index].amountMinorUnits
+                }
+                if sum == delta { solutions.append(mask) }
+            }
+            guard !solutions.isEmpty else { continue }
+            // Several choices add up (e.g. $300 in and $300 out on one day): pick the one the
+            // descriptions agree with best, and only if it is the single best.
+            func score(_ mask: Int) -> Int {
+                group.enumerated().reduce(0) { total, item in
+                    let isIn = (mask >> item.offset) & 1 == 1
+                    switch directionHint(lines[item.element].description) {
+                    case .moneyIn?: return total + (isIn ? 1 : -1)
+                    case .moneyOut?: return total + (isIn ? -1 : 1)
+                    case nil: return total
+                    }
+                }
+            }
+            let scored = solutions.map { ($0, score($0)) }
+            let best = scored.map(\.1).max() ?? 0
+            let winners = scored.filter { $0.1 == best }
+            guard winners.count == 1, let mask = winners.first?.0 else { continue }
+            let certain = solutions.count == 1
+            for (bit, index) in group.enumerated() {
+                let direction: StatementDirection = (mask >> bit) & 1 == 1 ? .moneyIn : .moneyOut
+                lines[index].direction = direction
+                lines[index].kind = classify(description: lines[index].description, direction: direction, isCard: false)
+                lines[index].confidence = certain ? .high : .medium
+                lines[index].note = certain ? nil : "In or out was chosen from the running balance and the description"
+            }
+        }
     }
 
     private static func resolveDirection(for t: MoneyText.Token, section: StatementDirection?, isCard: Bool)
