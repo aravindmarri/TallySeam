@@ -26,6 +26,7 @@ struct SettingsView: View {
                 }
                 Section("About") {
                     NavigationLink { PrivacyInfoView() } label: { Label("Privacy", systemImage: "lock.shield") }
+                    NavigationLink { AboutDeveloperView() } label: { Label("About the Developer", systemImage: "person.crop.circle") }
                     LabeledContent("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
                 }
             }
@@ -86,5 +87,51 @@ struct PrivacyInfoView: View {
         }
         .brandScreen()
         .navigationTitle("Privacy")
+    }
+}
+
+/// A short note about who made the app. Links open in Safari; the app itself never goes online.
+struct AboutDeveloperView: View {
+    var body: some View {
+        List {
+            Section {
+                VStack(spacing: 12) {
+                    Text("•   A   •   M   •")
+                        .font(.system(.title2, design: .serif).weight(.medium))
+                        .accessibilityLabel("A M")
+                    Text("Aravind Marri").font(.title3.weight(.semibold))
+                    Text("Developer of TallySeam").font(.subheadline).foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+            }
+            Section("About Me") {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Hi, I'm Aravind. I build software, and I like things that are simple and honest.")
+                    Text("For a long time I tracked my money in notes and spreadsheets. Every month I'd sit down, add up my cash, my bank balance and my card bills, and try to answer one question: where did it all go?")
+                    Text("I tried a lot of apps. Most wanted an account, a bank login or a subscription, and sent my spending to someone's server. My money is personal. I didn't want it living anywhere but my own phone.")
+                    Text("So I built the app I wanted. TallySeam reads your receipts and statements on the iPhone itself, checks every number and stitches it all into one clear picture.")
+                    Text("The name says it: a tally of every rupee, dollar and cent, joined at the seams. The dashed stitch on the icon is that seam.")
+                    Text("No cloud, no ads, no tracking. Just you and your numbers. I hope it helps you the way it helps me.")
+                    Text("— Aravind").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity, alignment: .trailing)
+                }
+                .font(.subheadline)
+                .padding(.vertical, 4)
+            }
+            Section("Find Me") {
+                Link(destination: URL(string: "https://aravindmarri.com")!) {
+                    Label("Website", systemImage: "person.crop.square")
+                }
+                Link(destination: URL(string: "https://blogs.aravindmarri.com")!) {
+                    Label("Blog", systemImage: "globe")
+                }
+                Link(destination: URL(string: "https://github.com/aravindmarri")!) {
+                    Label("GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+                }
+            }
+        }
+        .brandScreen()
+        .navigationTitle("About the Developer")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
