@@ -40,6 +40,8 @@ struct BackupPayload: Codable, Equatable, Sendable {
     var reconciliation: BackupReconciliationData?
     /// Investments and monthly snapshots. Absent in backups made before investments.
     var investments: BackupInvestmentData?
+    /// People, split shares and settle-up entries. Absent in backups made before splits.
+    var splits: BackupSplitData?
 
     /// Rejects data the app could never have produced. Nothing is imported if this fails.
     func validate() throws {
@@ -120,6 +122,8 @@ final class BackupService {
         p.reconciliation = reconciliation.isEmpty ? nil : reconciliation
         let investments = try BackupInvestmentData.make(from: context)
         p.investments = investments.isEmpty ? nil : investments
+        let splits = try BackupSplitData.make(from: context)
+        p.splits = splits.isEmpty ? nil : splits
         return p
     }
 
@@ -208,6 +212,10 @@ final class BackupService {
                 try investments.validate()
                 try investments.restore(into: context)
             }
+            if let splits = payload.splits {
+                try splits.validate()
+                try splits.restore(into: context)
+            }
             try context.save()
         } catch {
             context.rollback()
@@ -259,6 +267,9 @@ final class BackupService {
         try context.fetch(FetchDescriptor<MerchantAlias>()).forEach { context.delete($0) }
         try context.fetch(FetchDescriptor<Investment>()).forEach { context.delete($0) }
         try context.fetch(FetchDescriptor<MonthlySnapshot>()).forEach { context.delete($0) }
+        try context.fetch(FetchDescriptor<SplitLedgerEntry>()).forEach { context.delete($0) }
+        try context.fetch(FetchDescriptor<TransactionSplit>()).forEach { context.delete($0) }
+        try context.fetch(FetchDescriptor<SplitPerson>()).forEach { context.delete($0) }
         try context.save()
         try storage.removeOrphans(referenced: [])
         DefaultCategories.makeAll().forEach { context.insert($0) }

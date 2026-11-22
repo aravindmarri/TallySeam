@@ -65,6 +65,7 @@ final class TransactionRepository {
     func delete(id: UUID) throws {
         guard let t = try fetch(id: id) else { throw RepositoryError.notFound }
         context.delete(t)
+        try SplitRepository(context: context).transactionDeleted(id)
         try context.save()
     }
 

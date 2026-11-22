@@ -120,17 +120,27 @@ enum TallySeamSchemaV5: VersionedSchema {
     }
 }
 
+/// 6.0.0: split expenses with other people and settle up. New models only, so a lightweight stage
+/// adds the tables and every existing record is kept as it is.
+enum TallySeamSchemaV6: VersionedSchema {
+    static var versionIdentifier: Schema.Version { Schema.Version(6, 0, 0) }
+    static var models: [any PersistentModel.Type] {
+        TallySeamSchemaV5.models + [SplitPerson.self, TransactionSplit.self, SplitLedgerEntry.self]
+    }
+}
+
 /// The schema every container opens with.
-typealias TallySeamCurrentSchema = TallySeamSchemaV5
+typealias TallySeamCurrentSchema = TallySeamSchemaV6
 
 enum TallySeamMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [TallySeamSchemaV1.self, TallySeamSchemaV2.self, TallySeamSchemaV3.self, TallySeamSchemaV4.self, TallySeamSchemaV5.self]
+        [TallySeamSchemaV1.self, TallySeamSchemaV2.self, TallySeamSchemaV3.self, TallySeamSchemaV4.self, TallySeamSchemaV5.self, TallySeamSchemaV6.self]
     }
     static var stages: [MigrationStage] {
         [.lightweight(fromVersion: TallySeamSchemaV1.self, toVersion: TallySeamSchemaV2.self),
          .lightweight(fromVersion: TallySeamSchemaV2.self, toVersion: TallySeamSchemaV3.self),
          .lightweight(fromVersion: TallySeamSchemaV3.self, toVersion: TallySeamSchemaV4.self),
-         .lightweight(fromVersion: TallySeamSchemaV4.self, toVersion: TallySeamSchemaV5.self)]
+         .lightweight(fromVersion: TallySeamSchemaV4.self, toVersion: TallySeamSchemaV5.self),
+         .lightweight(fromVersion: TallySeamSchemaV5.self, toVersion: TallySeamSchemaV6.self)]
     }
 }

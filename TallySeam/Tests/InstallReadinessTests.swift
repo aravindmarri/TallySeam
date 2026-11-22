@@ -82,8 +82,9 @@ final class UpdateCompatibilityTests: XCTestCase {
         // If a model is added or changed, a new VersionedSchema and MigrationStage must be added,
         // otherwise existing users' stores would fail to open after an update.
         let latest = TallySeamMigrationPlan.schemas.last.map { ObjectIdentifier($0) }
-        XCTAssertEqual(latest, ObjectIdentifier(TallySeamSchemaV5.self))
-        XCTAssertEqual(ObjectIdentifier(TallySeamCurrentSchema.self), ObjectIdentifier(TallySeamSchemaV5.self))
+        XCTAssertEqual(latest, ObjectIdentifier(TallySeamSchemaV6.self))
+        XCTAssertEqual(ObjectIdentifier(TallySeamCurrentSchema.self), ObjectIdentifier(TallySeamSchemaV6.self))
+        XCTAssertEqual(TallySeamSchemaV6.versionIdentifier, Schema.Version(6, 0, 0))
         XCTAssertEqual(TallySeamSchemaV5.versionIdentifier, Schema.Version(5, 0, 0))
         XCTAssertEqual(TallySeamSchemaV4.versionIdentifier, Schema.Version(4, 0, 0))
         let expected: Set<String> = ["MoneyTransaction", "SpendingCategory", "PaymentMethod", "Receipt", "RecurringBill", "Budget", "AppSettings"]
@@ -92,6 +93,8 @@ final class UpdateCompatibilityTests: XCTestCase {
         XCTAssertEqual(Set(TallySeamSchemaV3.models.map { String(describing: $0) }), expectedV3)
         XCTAssertEqual(Set(TallySeamSchemaV4.models.map { String(describing: $0) }), expectedV3)
         XCTAssertEqual(Set(TallySeamSchemaV5.models.map { String(describing: $0) }), expectedV3.union(["Investment", "MonthlySnapshot"]))
+        XCTAssertEqual(Set(TallySeamSchemaV6.models.map { String(describing: $0) }),
+                       expectedV3.union(["Investment", "MonthlySnapshot", "SplitPerson", "TransactionSplit", "SplitLedgerEntry"]))
         XCTAssertEqual(TallySeamSchemaV3.versionIdentifier, Schema.Version(3, 0, 0))
         XCTAssertEqual(Set(TallySeamSchemaV2.models.map { String(describing: $0) }), expected)
         XCTAssertEqual(Set(TallySeamSchemaV1.models.map { String(describing: $0) }), expected)
