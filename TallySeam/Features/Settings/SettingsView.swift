@@ -14,6 +14,7 @@ struct SettingsView: View {
                     NavigationLink { BudgetsView() } label: { Label("Budgets", systemImage: "gauge.with.dots.needle.33percent") }
                     NavigationLink { InvestmentsView() } label: { Label("Investments", systemImage: "chart.line.uptrend.xyaxis") }
                     NavigationLink { SplitsView() } label: { Label("Splits", systemImage: "person.2") }
+                    NavigationLink { SubscriptionsView() } label: { Label("Subscriptions", systemImage: "repeat.circle") }
                 }
                 if let s = settings.first {
                     PreferencesSection(settings: s)

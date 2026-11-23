@@ -32,6 +32,7 @@ struct BillDetailView: View {
                     Button { confirmSkip = true } label: { Label("Skip This Payment", systemImage: "forward.end") }
                 }
             }
+            SubscriptionTypeSection(targetId: bill.id, categoryId: bill.categoryId, name: bill.title)
             paymentsSection(payments)
             Section {
                 Button(bill.isActive ? "Pause Bill" : "Resume Bill") { setActive(!bill.isActive) }

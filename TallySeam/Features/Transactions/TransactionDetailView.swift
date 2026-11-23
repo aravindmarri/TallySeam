@@ -46,6 +46,7 @@ struct TransactionDetailView: View {
                 receiptSection(receiptId)
             }
             TransactionSplitSection(record: record)
+            SubscriptionTypeSection(targetId: t.id, categoryId: t.categoryId, name: t.merchant ?? t.title)
             if let notes = t.notes, !notes.isEmpty {
                 Section("Notes") { Text(notes) }
             }
