@@ -51,6 +51,9 @@ final class PersistenceService {
         if try context.fetchCount(FetchDescriptor<AppSettings>()) == 0 {
             context.insert(AppSettings())
         }
+        if try context.fetchCount(FetchDescriptor<SubscriptionType>()) == 0 {
+            DefaultSubscriptionTypes.makeAll().forEach { context.insert($0) }
+        }
         if context.hasChanges { try context.save() }
     }
 

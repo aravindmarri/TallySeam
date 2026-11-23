@@ -129,18 +129,28 @@ enum TallySeamSchemaV6: VersionedSchema {
     }
 }
 
+/// 7.0.0: subscription types (Gym & Fitness, Streaming, Car…) under the Subscriptions category.
+/// New models only, so a lightweight stage adds the tables and every existing record is kept.
+enum TallySeamSchemaV7: VersionedSchema {
+    static var versionIdentifier: Schema.Version { Schema.Version(7, 0, 0) }
+    static var models: [any PersistentModel.Type] {
+        TallySeamSchemaV6.models + [SubscriptionType.self, SubscriptionLink.self]
+    }
+}
+
 /// The schema every container opens with.
-typealias TallySeamCurrentSchema = TallySeamSchemaV6
+typealias TallySeamCurrentSchema = TallySeamSchemaV7
 
 enum TallySeamMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [TallySeamSchemaV1.self, TallySeamSchemaV2.self, TallySeamSchemaV3.self, TallySeamSchemaV4.self, TallySeamSchemaV5.self, TallySeamSchemaV6.self]
+        [TallySeamSchemaV1.self, TallySeamSchemaV2.self, TallySeamSchemaV3.self, TallySeamSchemaV4.self, TallySeamSchemaV5.self, TallySeamSchemaV6.self, TallySeamSchemaV7.self]
     }
     static var stages: [MigrationStage] {
         [.lightweight(fromVersion: TallySeamSchemaV1.self, toVersion: TallySeamSchemaV2.self),
          .lightweight(fromVersion: TallySeamSchemaV2.self, toVersion: TallySeamSchemaV3.self),
          .lightweight(fromVersion: TallySeamSchemaV3.self, toVersion: TallySeamSchemaV4.self),
          .lightweight(fromVersion: TallySeamSchemaV4.self, toVersion: TallySeamSchemaV5.self),
-         .lightweight(fromVersion: TallySeamSchemaV5.self, toVersion: TallySeamSchemaV6.self)]
+         .lightweight(fromVersion: TallySeamSchemaV5.self, toVersion: TallySeamSchemaV6.self),
+         .lightweight(fromVersion: TallySeamSchemaV6.self, toVersion: TallySeamSchemaV7.self)]
     }
 }

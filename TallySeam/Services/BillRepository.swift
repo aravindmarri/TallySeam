@@ -86,6 +86,7 @@ final class BillRepository {
     func delete(id: UUID) throws {
         guard let bill = try fetch(id: id) else { throw RepositoryError.notFound }
         context.delete(bill)
+        try SubscriptionRepository(context: context).targetDeleted(id)
         try context.save()
     }
 

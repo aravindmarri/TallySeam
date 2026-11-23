@@ -42,6 +42,8 @@ struct BackupPayload: Codable, Equatable, Sendable {
     var investments: BackupInvestmentData?
     /// People, split shares and settle-up entries. Absent in backups made before splits.
     var splits: BackupSplitData?
+    /// Subscription types and links. Absent in backups made before subscription types.
+    var subscriptions: BackupSubscriptionData?
 
     /// Rejects data the app could never have produced. Nothing is imported if this fails.
     func validate() throws {
@@ -124,6 +126,8 @@ final class BackupService {
         p.investments = investments.isEmpty ? nil : investments
         let splits = try BackupSplitData.make(from: context)
         p.splits = splits.isEmpty ? nil : splits
+        let subscriptions = try BackupSubscriptionData.make(from: context)
+        p.subscriptions = subscriptions.links.isEmpty ? nil : subscriptions
         return p
     }
 
@@ -216,6 +220,10 @@ final class BackupService {
                 try splits.validate()
                 try splits.restore(into: context)
             }
+            if let subscriptions = payload.subscriptions {
+                try subscriptions.validate()
+                try subscriptions.restore(into: context)
+            }
             try context.save()
         } catch {
             context.rollback()
@@ -270,9 +278,12 @@ final class BackupService {
         try context.fetch(FetchDescriptor<SplitLedgerEntry>()).forEach { context.delete($0) }
         try context.fetch(FetchDescriptor<TransactionSplit>()).forEach { context.delete($0) }
         try context.fetch(FetchDescriptor<SplitPerson>()).forEach { context.delete($0) }
+        try context.fetch(FetchDescriptor<SubscriptionLink>()).forEach { context.delete($0) }
+        try context.fetch(FetchDescriptor<SubscriptionType>()).forEach { context.delete($0) }
         try context.save()
         try storage.removeOrphans(referenced: [])
         DefaultCategories.makeAll().forEach { context.insert($0) }
+        DefaultSubscriptionTypes.makeAll().forEach { context.insert($0) }
         context.insert(AppSettings())
         try context.save()
     }

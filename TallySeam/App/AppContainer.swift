@@ -22,6 +22,7 @@ final class AppContainer {
     let statements: StatementRepository
     let investments: InvestmentRepository
     let splits: SplitRepository
+    let subscriptions: SubscriptionRepository
     let lock: AppLockController
     let textRecognizer: any ReceiptTextRecognizing
     let categorySuggester: any CategorySuggesting
@@ -45,6 +46,7 @@ final class AppContainer {
         self.statements = StatementRepository(context: persistence.context)
         self.investments = InvestmentRepository(context: persistence.context)
         self.splits = SplitRepository(context: persistence.context)
+        self.subscriptions = SubscriptionRepository(context: persistence.context)
         let lockEnabled = (try? persistence.context.fetch(FetchDescriptor<AppSettings>()).first?.requireBiometricUnlock) ?? false
         self.lock = AppLockController(isEnabled: lockEnabled, authenticator: authenticator)
         self.textRecognizer = textRecognizer
