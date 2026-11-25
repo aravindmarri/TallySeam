@@ -7,7 +7,7 @@
 An offline, private iPhone app for tracking income, expenses, receipts and bills.
 It is built with SwiftUI, SwiftData, Swift Charts and Apple Vision, targets iOS 17+, and uses no third-party packages, accounts or network access.
 
-> **Build status:** GitHub Actions compiles the app and runs 264 tests on every push (all passing). An unsigned IPA is produced for re-signing.
+> **Build status:** GitHub Actions compiles the app and runs 302 tests on every push (all passing). An unsigned IPA is produced for re-signing.
 > See [docs/BUILD_STATUS.md](docs/BUILD_STATUS.md) for what has been verified and what hasn't.
 
 ## Repository layout

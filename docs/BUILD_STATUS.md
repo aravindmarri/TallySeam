@@ -1,10 +1,25 @@
 # Build Status
 
-_Last updated: 2026-11-20 (CI run #41)_
+_Last updated: 2026-11-24 (CI run #64)_
 
 Development happens on Windows. iOS builds and tests run on GitHub Actions (`.github/workflows/ios-build.yml`, `macos-15` runner, XcodeGen).
 
-## Summary (CI run #41, commit `f781bcc`)
+## Latest: CI run #64, commit `1f40a9e` (version 1.3)
+
+| Check | Result |
+|---|---|
+| Simulator compile and tests | **Pass: 302 of 302** |
+| Unsigned IPA | **Pass:** 1.3 (64), arm64 device build, 2,119,380 bytes |
+| dSYM | **Pass:** UUID `98BE669A-F049-3AB2-A271-1FDD3445C314` matches the app; kept 90 days |
+| Debug-only diagnostic actions absent from the release binary | **Pass** |
+| MetricKit delivery on a real iPhone | **Not done** (simulator tests use synthetic data) |
+| Run on a real iPhone | **Not done** |
+
+Run: https://github.com/aravindmarri/TallySeam/actions/runs/45541535031
+
+Runs #62 (a repeated end of one operation crashed) and #63 (a test used fractional seconds) failed and were fixed.
+
+## Earlier summary (CI run #41, commit `f781bcc`)
 
 | Check | Result |
 |---|---|
