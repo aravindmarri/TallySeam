@@ -47,7 +47,21 @@ protocol ReceiptTextRecognizing: Sendable {
 /// On-device text recognition with Apple Vision. `VNRecognizeTextRequest` runs entirely on the
 /// device; no image or text leaves the iPhone and no network is required.
 struct VisionReceiptOCRService: ReceiptTextRecognizing {
+    var logger: any AppLogger = DiagnosticsService.shared
+
     func recognizeText(in image: CGImage) async throws -> [String] {
+        let token = logger.begin(.receiptOCR)
+        do {
+            let lines = try await readLines(in: image)
+            logger.end(token)
+            return lines
+        } catch {
+            logger.end(token, error: error)
+            throw error
+        }
+    }
+
+    private func readLines(in image: CGImage) async throws -> [String] {
         let lines = try await Task.detached(priority: .userInitiated) { () throws -> [String] in
             let request = VNRecognizeTextRequest()
             request.recognitionLevel = .accurate

@@ -16,7 +16,9 @@ enum InvestmentError: Error, Equatable, LocalizedError {
 @MainActor
 final class InvestmentRepository {
     private let context: ModelContext
-    init(context: ModelContext) { self.context = context }
+    private let logger: any AppLogger
+
+    init(context: ModelContext, logger: any AppLogger = DiagnosticsService.shared) { self.context = context; self.logger = logger }
 
     static func cleanTicker(_ s: String) -> String {
         s.trimmingCharacters(in: .whitespacesAndNewlines).uppercased().filter { !$0.isWhitespace }
@@ -31,7 +33,7 @@ final class InvestmentRepository {
                            purchasePriceMinorUnits: purchasePriceMinorUnits, currentPriceMinorUnits: currentPriceMinorUnits,
                            currencyCode: currencyCode, priceUpdatedAt: now, createdAt: now)
         context.insert(i)
-        try context.save()
+        try logger.measure(.investmentSave) { try context.save() }
         return i
     }
 
@@ -43,19 +45,19 @@ final class InvestmentRepository {
         if i.currentPriceMinorUnits != currentPriceMinorUnits { i.priceUpdatedAt = now }
         i.ticker = t; i.name = n.isEmpty ? t : n; i.kindRaw = kind.rawValue; i.shareMicros = shareMicros
         i.purchasePriceMinorUnits = purchasePriceMinorUnits; i.currentPriceMinorUnits = currentPriceMinorUnits
-        try context.save()
+        try logger.measure(.investmentSave) { try context.save() }
     }
 
     func updatePrice(_ i: Investment, currentPriceMinorUnits: Int64, now: Date = .now) throws {
         guard currentPriceMinorUnits >= 0 else { throw InvestmentError.invalidPrice }
         i.currentPriceMinorUnits = currentPriceMinorUnits
         i.priceUpdatedAt = now
-        try context.save()
+        try logger.measure(.investmentSave) { try context.save() }
     }
 
     func delete(_ i: Investment) throws {
         context.delete(i)
-        try context.save()
+        try logger.measure(.investmentSave) { try context.save() }
     }
 
     /// Records the month's balances, replacing an earlier snapshot for the same month and currency.
@@ -75,7 +77,8 @@ final class InvestmentRepository {
                                 investmentsMinorUnits: investments, creditCardDebtMinorUnits: creditCardDebt, recordedAt: now)
             context.insert(s)
         }
-        try context.save()
+        try logger.measure(.checkInSave) { try context.save() }
+        logger.log(.checkInSaved)
         return s
     }
 

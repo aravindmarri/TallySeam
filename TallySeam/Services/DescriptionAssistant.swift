@@ -73,11 +73,14 @@ struct OnDeviceModelDescriptionAssistant: StatementDescriptionAssisting {
         Never invent amounts, dates or balances.
         """
         let prompt = "Statement line: \(description.prefix(200))\nLine type: \(kind.displayName)\nAllowed categories: \(categoryNames.joined(separator: ", "))"
+        let token = DiagnosticsService.shared.begin(.aiResponse)
         do {
             let session = LanguageModelSession(instructions: instructions)
             let response = try await session.respond(to: prompt)
+            DiagnosticsService.shared.end(token)
             return Self.parse(response.content, categoryNames: categoryNames, fallback: fallback)
         } catch {
+            DiagnosticsService.shared.end(token, error: error)
             return fallback
         }
     }

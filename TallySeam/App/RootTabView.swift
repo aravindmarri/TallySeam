@@ -33,6 +33,9 @@ struct RootTabView: View {
                 .tag(AppTab.settings)
         }
         .preferredColorScheme(colorScheme)
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in
+            app.diagnostics.log(.memoryWarning)
+        }
     }
 }
 

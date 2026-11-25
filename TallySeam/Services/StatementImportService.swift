@@ -40,6 +40,7 @@ struct StatementPreview: Equatable, Sendable {
 /// Turns an imported file into an `ImportedDocument`. Runs fully on the device.
 struct StatementImportService: Sendable {
     var recognizer: any ReceiptTextRecognizing
+    var logger: any AppLogger = DiagnosticsService.shared
 
     func read(filename: String, data: Data, password: String? = nil, defaultCurrency: String, calendar: Calendar = .current,
               now: Date = .now, progress: (@Sendable (Int, Int) -> Void)? = nil) async -> ImportedDocument {
@@ -49,22 +50,26 @@ struct StatementImportService: Sendable {
                              fingerprint: DocumentFingerprint.sha256(data), content: content)
         }
         guard data.count <= DocumentLimits.maximumFileBytes else { return doc(.failed(DocumentReadError.tooLarge.localizedDescription)) }
-        guard format.isSupported else { return doc(.failed(DocumentReadError.unsupportedFormat(format).localizedDescription)) }
+        guard format.isSupported else { logger.log(.documentUnsupported); return doc(.failed(DocumentReadError.unsupportedFormat(format).localizedDescription)) }
 
         switch format {
         case .image:
             return doc(.image(data))
         case .csv:
-            do { return doc(.csv(try CSVParser.parse(try CSVParser.decode(data)))) }
+            do { return doc(.csv(try logger.measure(.csvParse) { try CSVParser.parse(try CSVParser.decode(data)) })) }
             catch { return doc(.failed(error.localizedDescription)) }
         case .pdf, .text:
             let reader: any DocumentReading = format == .pdf ? PDFStatementReader(recognizer: recognizer) : PlainTextDocumentReader()
+            let token = logger.begin(.documentRead)
             do {
                 let text = try await reader.read(data, password: password, progress: progress)
+                logger.end(token)
                 return doc(.statement(Self.preview(text: text, format: format, defaultCurrency: defaultCurrency, calendar: calendar, now: now)))
             } catch DocumentReadError.passwordRequired {
+                logger.end(token)
                 return doc(.needsPassword(data))
             } catch {
+                logger.end(token, error: error)
                 return doc(.failed(error.localizedDescription))
             }
         case .xlsx, .ofx, .qfx, .unknown:
@@ -75,6 +80,8 @@ struct StatementImportService: Sendable {
     /// Classification, header and transaction lines from extracted text. Pure and deterministic.
     static func preview(text: DocumentText, format: DocumentFormat, defaultCurrency: String, calendar: Calendar,
                         now: Date = .now) -> StatementPreview {
+        let token = DiagnosticsService.shared.begin(.statementParse)
+        defer { DiagnosticsService.shared.end(token) }
         let lines = text.allLines
         let classification = DocumentClassifier.classify(lines: lines, format: format)
         let header = StatementHeaderExtractor.extract(lines: lines, kind: classification.kind, defaultCurrency: defaultCurrency, calendar: calendar)

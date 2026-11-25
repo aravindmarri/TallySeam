@@ -33,8 +33,9 @@ enum RepositoryError: Error, Equatable, LocalizedError {
 @MainActor
 final class TransactionRepository {
     private let context: ModelContext
+    private let logger: any AppLogger
 
-    init(context: ModelContext) { self.context = context }
+    init(context: ModelContext, logger: any AppLogger = DiagnosticsService.shared) { self.context = context; self.logger = logger }
 
     func fetch(id: UUID) throws -> MoneyTransaction? {
         var d = FetchDescriptor<MoneyTransaction>(predicate: #Predicate { $0.id == id })
@@ -43,7 +44,7 @@ final class TransactionRepository {
     }
 
     func allRecords() throws -> [TransactionRecord] {
-        try context.fetch(FetchDescriptor<MoneyTransaction>()).map(\.record)
+        try logger.measure(.transactionFetch) { try context.fetch(FetchDescriptor<MoneyTransaction>()).map(\.record) }
     }
 
     /// Inserts a new transaction or updates the one being edited.
@@ -56,7 +57,7 @@ final class TransactionRepository {
         } else {
             context.insert(MoneyTransaction(record: record))
         }
-        try context.save()
+        try logger.measure(.databaseSave) { try context.save() }
         return record
     }
 

@@ -24,6 +24,7 @@ final class AppContainer {
     let splits: SplitRepository
     let subscriptions: SubscriptionRepository
     let lock: AppLockController
+    let diagnostics: DiagnosticsService
     let textRecognizer: any ReceiptTextRecognizing
     let categorySuggester: any CategorySuggesting
     var selectedTab: AppTab = .home
@@ -33,18 +34,20 @@ final class AppContainer {
          finance: FinanceCalculationService = FinanceCalculationService(),
          textRecognizer: any ReceiptTextRecognizing = VisionReceiptOCRService(),
          categorySuggester: any CategorySuggesting = HeuristicCategorySuggestionService(),
-         authenticator: any DeviceAuthenticating = LocalDeviceAuthenticator()) {
+         authenticator: any DeviceAuthenticating = LocalDeviceAuthenticator(),
+         diagnostics: DiagnosticsService = .shared) {
         self.persistence = persistence
+        self.diagnostics = diagnostics
         self.finance = finance
-        self.transactions = TransactionRepository(context: persistence.context)
+        self.transactions = TransactionRepository(context: persistence.context, logger: diagnostics)
         self.referenceData = ReferenceDataRepository(context: persistence.context)
         self.receipts = ReceiptRepository(context: persistence.context, storage: receiptStorage)
         self.bills = BillRepository(context: persistence.context)
         self.budgets = BudgetRepository(context: persistence.context)
         self.budgetCalculator = BudgetCalculationService(finance: finance)
-        self.backup = BackupService(context: persistence.context, storage: receiptStorage)
+        self.backup = BackupService(context: persistence.context, storage: receiptStorage, logger: diagnostics)
         self.statements = StatementRepository(context: persistence.context)
-        self.investments = InvestmentRepository(context: persistence.context)
+        self.investments = InvestmentRepository(context: persistence.context, logger: diagnostics)
         self.splits = SplitRepository(context: persistence.context)
         self.subscriptions = SubscriptionRepository(context: persistence.context)
         let lockEnabled = (try? persistence.context.fetch(FetchDescriptor<AppSettings>()).first?.requireBiometricUnlock) ?? false
@@ -54,7 +57,8 @@ final class AppContainer {
     }
 
     static func live() throws -> AppContainer {
-        let persistence = try PersistenceService()
+        let persistence = try DiagnosticsService.shared.measure(.databaseOpen) { try PersistenceService() }
+        DiagnosticsService.shared.log(.databaseOpened)
         try persistence.seedDefaultsIfNeeded()
         let container = AppContainer(persistence: persistence, receiptStorage: try ReceiptStorageService.live())
         _ = try? container.receipts.removeOrphanedImages()

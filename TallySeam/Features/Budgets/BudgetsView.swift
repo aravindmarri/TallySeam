@@ -35,8 +35,12 @@ struct BudgetsView: View {
     }
 
     private var list: some View {
-        let progress = app.budgetCalculator.progress(budgets: budgets.map(\.record), records: SplitMath.personalRecords(transactions.map(\.record), splits: splitShares.map(\.value),
-                                                                                                  ledger: splitLedger.map(\.value)), month: month)
+        let progress = DiagnosticsService.shared.measure(.calculation) {
+            app.budgetCalculator.progress(
+                budgets: budgets.map(\.record),
+                records: SplitMath.personalRecords(transactions.map(\.record), splits: splitShares.map(\.value), ledger: splitLedger.map(\.value)),
+                month: month)
+        }
         let names = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0.name) })
         let paused = budgets.filter { !$0.isActive }
         return List {

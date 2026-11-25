@@ -65,7 +65,11 @@ final class AppLockController {
         guard isLocked, !isAuthenticating else { return }
         isAuthenticating = true
         defer { isAuthenticating = false }
-        if await authenticator.authenticate(reason: "Unlock your financial data") { isLocked = false }
+        if await authenticator.authenticate(reason: "Unlock your financial data") {
+            isLocked = false
+        } else {
+            DiagnosticsService.shared.log(.authenticationFailed)
+        }
     }
 
     /// Turning the lock on or off requires the owner to authenticate first.

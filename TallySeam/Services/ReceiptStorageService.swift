@@ -38,7 +38,8 @@ struct ReceiptStorageService: Sendable {
         #if os(iOS)
         options.insert(.completeFileProtection)
         #endif
-        try jpegData.write(to: try url(forRelativePath: path), options: options)
+        let target = try url(forRelativePath: path)
+        try DiagnosticsService.shared.measure(.fileStore) { try jpegData.write(to: target, options: options) }
         return path
     }
 

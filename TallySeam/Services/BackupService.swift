@@ -87,14 +87,21 @@ final class BackupService {
     private let context: ModelContext
     private let storage: ReceiptStorageService
 
-    init(context: ModelContext, storage: ReceiptStorageService) {
+    private let logger: any AppLogger
+
+    init(context: ModelContext, storage: ReceiptStorageService, logger: any AppLogger = DiagnosticsService.shared) {
         self.context = context
         self.storage = storage
+        self.logger = logger
     }
 
     // MARK: Export
 
     func makePayload(now: Date = .now) throws -> BackupPayload {
+        try logger.measure(.backupCreate) { try buildPayload(now: now) }
+    }
+
+    private func buildPayload(now: Date) throws -> BackupPayload {
         var p = BackupPayload(exportedAt: now)
         p.categories = try context.fetch(FetchDescriptor<SpendingCategory>(sortBy: [SortDescriptor(\.displayOrder)])).map {
             .init(id: $0.id, name: $0.name, symbol: $0.symbol, colorIdentifier: $0.colorIdentifier, kind: $0.kind,
@@ -145,6 +152,10 @@ final class BackupService {
 
     @discardableResult
     func restore(_ payload: BackupPayload) throws -> ImportSummary {
+        try logger.measure(.backupRestore) { try performRestore(payload) }
+    }
+
+    private func performRestore(_ payload: BackupPayload) throws -> ImportSummary {
         try payload.validate()
         var summary = ImportSummary()
         var writtenImages: [String] = []

@@ -71,7 +71,9 @@ final class ReportsViewModel {
 
     func snapshot(records: [TransactionRecord], currencyCode: String, finance: FinanceCalculationService, now: Date = .now) -> ReportSnapshot {
         let range = period.range(now: now, customStart: customStart, customEnd: customEnd, calendar: calendar)
-        return ReportSnapshot(records: records, range: range, currencyCode: currencyCode, now: now, finance: finance)
+        return DiagnosticsService.shared.measure(.reportGeneration) {
+            ReportSnapshot(records: records, range: range, currencyCode: currencyCode, now: now, finance: finance)
+        }
     }
 }
 

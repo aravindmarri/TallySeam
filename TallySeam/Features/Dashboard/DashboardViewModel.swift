@@ -23,6 +23,8 @@ final class DashboardViewModel {
     }
 
     func summary(records: [TransactionRecord], currencyCode: String, finance: FinanceCalculationService) -> PeriodSummary {
-        finance.summary(of: records, in: range, currencyCode: currencyCode)
+        DiagnosticsService.shared.measure(.dashboardLoad) {
+            finance.summary(of: records, in: range, currencyCode: currencyCode)
+        }
     }
 }

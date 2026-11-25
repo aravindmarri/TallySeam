@@ -178,6 +178,8 @@ struct StatementReconciliationService: Sendable {
 
     func reconcile(lines: [StatementLineInput], existing: [TransactionRecord], account: ReconciliationAccount,
                    alreadyMatched: Set<UUID> = [], learnedAliases: [String: String] = [:]) -> [LineReconciliation] {
+        let token = DiagnosticsService.shared.begin(.reconciliation)
+        defer { DiagnosticsService.shared.end(token) }
         // Work out each day number and merchant key once, then compare a line only with transactions
         // dated near it (binary search), so long statements and long histories stay fast.
         let reference = calendar.startOfDay(for: Date(timeIntervalSince1970: 0))
