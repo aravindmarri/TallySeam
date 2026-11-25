@@ -78,7 +78,6 @@ final class InvestmentRepository {
             context.insert(s)
         }
         try logger.measure(.checkInSave) { try context.save() }
-        logger.log(.checkInSaved)
         return s
     }
 

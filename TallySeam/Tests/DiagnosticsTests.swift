@@ -112,7 +112,20 @@ final class DiagnosticsTests: XCTestCase {
         d.log(.testInfo); d.log(.operationCompleted)
         d.settings.profile = .verbose
         d.log(.operationCompleted)
-        XCTAssertEqual(codes(d), ["DIAG_001", "TEST_500", "TEST_001", "PERF_001"])
+        XCTAssertEqual(codes(d), ["TEST_500", "TEST_001", "PERF_001"])
+    }
+
+    func testStandardLogIgnoresRoutineAndUserCausedEvents() {
+        let d = service()
+        d.setPerformance(true)
+        d.log(.appLaunched); d.log(.authenticationFailed); d.log(.documentUnsupported)
+        d.measure(.backupCreate) {}
+        _ = try? d.measure(.documentRead) { throw DocumentReadError.wrongPassword }
+        _ = try? d.measure(.receiptOCR) { throw ReceiptOCRError.noTextFound }
+        _ = try? d.measure(.aiResponse) { throw CancellationError() }
+        XCTAssertEqual(codes(d), [])
+        _ = try? d.measure(.documentRead) { throw DocumentReadError.unreadable }
+        XCTAssertEqual(codes(d), ["DOC_500"])
     }
 
     func testSubscriptionFollowsSettings() {

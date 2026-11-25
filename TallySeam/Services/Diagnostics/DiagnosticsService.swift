@@ -117,7 +117,6 @@ final class DiagnosticsService: AppLogger, @unchecked Sendable {
             generation += 1
             metrics = nil
             settings.isEnabled = on
-            if on { log(.diagnosticsEnabled) }
         }
     }
 
@@ -168,7 +167,7 @@ final class DiagnosticsService: AppLogger, @unchecked Sendable {
             signposter.endInterval("Operation", interval)
             guard settings.isEnabled, token.generation == generation else { return }
             let op = token.operation
-            let cancelled = error is CancellationError
+            let cancelled = error.map(Self.isExpected) ?? false
             let failed = error != nil && !cancelled
             if op.leavesBreadcrumb { leave(failed ? .failed : .succeeded, token) }
             if failed {
@@ -177,6 +176,15 @@ final class DiagnosticsService: AppLogger, @unchecked Sendable {
                 write(ms >= op.slowMilliseconds ? .operationSlow : .operationCompleted, operation: op, operationId: token.id, durationMs: ms, error: nil)
             }
             if settings.performance, !cancelled { record(op, ms: ms, failed: failed) }
+        }
+    }
+
+    /// Everyday situations, not faults: the user cancelled, a PDF needs its password, a photo has no text.
+    static func isExpected(_ error: any Error) -> Bool {
+        if error is CancellationError { return true }
+        switch error {
+        case DocumentReadError.passwordRequired, DocumentReadError.wrongPassword, ReceiptOCRError.noTextFound: return true
+        default: return false
         }
     }
 

@@ -58,7 +58,6 @@ final class AppContainer {
 
     static func live() throws -> AppContainer {
         let persistence = try DiagnosticsService.shared.measure(.databaseOpen) { try PersistenceService() }
-        DiagnosticsService.shared.log(.databaseOpened)
         try persistence.seedDefaultsIfNeeded()
         let container = AppContainer(persistence: persistence, receiptStorage: try ReceiptStorageService.live())
         _ = try? container.receipts.removeOrphanedImages()

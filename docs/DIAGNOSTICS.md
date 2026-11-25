@@ -27,6 +27,10 @@ If the database can't be opened, the error screen offers the same export when re
 | Standard | INFO, WARNING, ERROR, CRITICAL |
 | Verbose | Everything, with the same privacy rules |
 
+Standard holds only things worth investigating: failures, slow operations, memory warnings and reports from iOS. App launches,
+completed operations and user-caused situations (a cancelled Face ID, an unsupported file) appear only with Verbose. A wrong
+PDF password or a photo without text is not logged.
+
 ## Storage
 
 `Application Support/Diagnostics/`, apart from financial data. JSON Lines, 256 KB per file, 7 days, 5 MB in total (oldest

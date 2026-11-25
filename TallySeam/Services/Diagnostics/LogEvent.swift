@@ -40,10 +40,8 @@ enum LogCategory: String, Codable, CaseIterable, Identifiable, Sendable {
 /// Every event the app can log. This catalog is the allowlist: the level, category and message of
 /// an event come from here, never from a caller, so no free text can enter the log.
 enum DiagnosticCode: String, Codable, CaseIterable, Sendable {
-    case diagnosticsEnabled = "DIAG_001"
     case appLaunched = "APP_001"
     case startupFailed = "APP_500"
-    case databaseOpened = "DB_001"
     case databaseOpenFailed = "DB_500"
     case databaseSaveFailed = "DB_501"
     case migrationFailed = "MIG_500"
@@ -54,13 +52,11 @@ enum DiagnosticCode: String, Codable, CaseIterable, Sendable {
     case ocrFailed = "OCR_500"
     case documentImportFailed = "DOC_500"
     case documentUnsupported = "DOC_300"
-    case statementParsed = "STATEMENT_PARSE_000"
     case statementParseFailed = "STATEMENT_PARSE_001"
     case csvParseFailed = "CSV_500"
     case reconciliationFailed = "RECON_500"
     case calculationFailed = "CALC_500"
     case investmentSaveFailed = "INV_500"
-    case checkInSaved = "CHECKIN_001"
     case checkInFailed = "CHECKIN_500"
     case aiFallback = "AI_300"
     case backupFailed = "BACKUP_500"
@@ -75,29 +71,29 @@ enum DiagnosticCode: String, Codable, CaseIterable, Sendable {
 
     var level: LogLevel {
         switch self {
-        case .operationCompleted: .debug
+        // Routine or user-caused: only with Verbose.
+        case .operationCompleted, .appLaunched, .authenticationFailed, .documentUnsupported: .debug
         case .startupFailed, .databaseOpenFailed, .migrationFailed: .critical
-        case .operationSlow, .documentUnsupported, .aiFallback, .authenticationFailed, .memoryWarning, .testWarning: .warning
-        case .diagnosticsEnabled, .appLaunched, .databaseOpened, .statementParsed, .checkInSaved,
-             .crashReportReceived, .testInfo: .info
+        case .operationSlow, .aiFallback, .memoryWarning, .crashReportReceived, .testWarning: .warning
+        case .testInfo: .info
         default: .error
         }
     }
 
     var category: LogCategory {
         switch self {
-        case .diagnosticsEnabled, .appLaunched, .startupFailed, .testInfo, .testWarning, .testError: .lifecycle
-        case .databaseOpened, .databaseOpenFailed, .databaseSaveFailed: .persistence
+        case .appLaunched, .startupFailed, .testInfo, .testWarning, .testError: .lifecycle
+        case .databaseOpenFailed, .databaseSaveFailed: .persistence
         case .migrationFailed: .migration
         case .operationCompleted, .operationSlow: .performance
         case .transactionSaveFailed, .transactionFetchFailed: .transactions
         case .ocrFailed: .receiptOCR
         case .documentImportFailed, .documentUnsupported: .documentImport
-        case .statementParsed, .statementParseFailed, .csvParseFailed: .parsing
+        case .statementParseFailed, .csvParseFailed: .parsing
         case .reconciliationFailed: .reconciliation
         case .calculationFailed: .calculations
         case .investmentSaveFailed: .investments
-        case .checkInSaved, .checkInFailed: .monthlyCheckIn
+        case .checkInFailed: .monthlyCheckIn
         case .aiFallback: .appleIntelligence
         case .backupFailed, .restoreFailed: .backup
         case .authenticationFailed: .authentication
@@ -109,10 +105,8 @@ enum DiagnosticCode: String, Codable, CaseIterable, Sendable {
 
     var message: String {
         switch self {
-        case .diagnosticsEnabled: "Diagnostics were enabled"
         case .appLaunched: "Application started"
         case .startupFailed: "Application failed to start"
-        case .databaseOpened: "Database opened"
         case .databaseOpenFailed: "Database could not be opened"
         case .databaseSaveFailed: "Database save failed"
         case .migrationFailed: "Database migration failed"
@@ -123,13 +117,11 @@ enum DiagnosticCode: String, Codable, CaseIterable, Sendable {
         case .ocrFailed: "Text recognition failed"
         case .documentImportFailed: "Document could not be read"
         case .documentUnsupported: "Document format was unsupported"
-        case .statementParsed: "Statement parsed"
         case .statementParseFailed: "Statement parsing failed"
         case .csvParseFailed: "Spreadsheet parsing failed"
         case .reconciliationFailed: "Statement reconciliation failed"
         case .calculationFailed: "Calculation failed"
         case .investmentSaveFailed: "Investment could not be saved"
-        case .checkInSaved: "Monthly check-in saved"
         case .checkInFailed: "Monthly check-in could not be saved"
         case .aiFallback: "On-device model unavailable or failed; built-in rules were used"
         case .backupFailed: "Backup could not be created"
