@@ -265,6 +265,14 @@ final class DiagnosticsTests: XCTestCase {
         XCTAssertEqual(s.allEvents().count, 200)
     }
 
+    func testWritingAndReadingStaysLight() {
+        let s = store()
+        let began = ContinuousClock.now
+        for _ in 0..<300 { s.append(event()) }
+        XCTAssertEqual(s.allEvents().count, 300)
+        XCTAssertLessThan(ContinuousClock.now - began, .seconds(5))
+    }
+
     func testRotationAndTotalLimit() {
         var limits = LocalLogStore.Limits()
         limits.totalBytes = 8_000
@@ -331,7 +339,8 @@ final class DiagnosticsTests: XCTestCase {
         var limits = LocalLogStore.Limits()
         limits.segmentBytes = 1_000
         let s = store(limits)
-        let start = Date(timeIntervalSinceNow: -1_000)
+        // Whole seconds, as stored times have no fraction.
+        let start = Date(timeIntervalSince1970: (Date().timeIntervalSince1970 - 1_000).rounded(.down))
         for i in 0..<25 { s.append(event(i % 5 == 0 ? .testError : .testInfo, at: start.addingTimeInterval(Double(i)))) }
         var seen: [LogEvent] = []
         var cursor: LogCursor?
