@@ -137,6 +137,7 @@ After the first Mac build, record the results in `docs/BUILD_STATUS.md`.
 ## Privacy
 
 - Everything stays on the device. The app has no iCloud sync, analytics, ads or accounts, and never connects to your bank.
+- Developer Diagnostics is off by default, stays on the device and is shared only by a manual export. It holds no personal or financial data: see [docs/DIAGNOSTICS.md](docs/DIAGNOSTICS.md).
 - Never commit screenshots of real finances, real receipts, local databases, exports, signing keys or credentials. `.gitignore` blocks common cases, but always review `git status` before committing.
 
 ## Documentation
@@ -144,3 +145,4 @@ After the first Mac build, record the results in `docs/BUILD_STATUS.md`.
 - [Architecture](docs/ARCHITECTURE.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Build status](docs/BUILD_STATUS.md)
+- [Developer diagnostics](docs/DIAGNOSTICS.md)

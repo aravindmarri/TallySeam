@@ -102,6 +102,13 @@ StatementRepository ─▶ ImportedStatement / StatementTransaction / Reconcilia
 - **Transaction delete:** deleting a transaction always asks for confirmation. Duplicating opens an unsaved draft.
 - **Store errors:** on a store-open failure the app shows an error. It never resets the store.
 
+## Diagnostics
+
+`Services/Diagnostics` is separate from financial data. `DiagnosticsService` (injected as `AppLogger`, shared instance by default) checks
+the user's choice and writes under one lock; `LocalLogStore` keeps JSON Lines files; `DiagnosticPrivacyFilter` allows only catalog
+events; `CrashDiagnosticsService` listens to MetricKit only while wanted; `DiagnosticExportService` validates and zips. It starts before
+the database and adds no SwiftData models. See [DIAGNOSTICS.md](DIAGNOSTICS.md).
+
 ## Future: split transactions
 
 A parent transaction holds the total, and child `TransactionSplit` rows (category, amount) add up to it.

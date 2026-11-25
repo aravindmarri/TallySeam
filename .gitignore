@@ -57,6 +57,11 @@ temp/
 *.mymoneyai
 *.mmbackup
 exports/
+# Diagnostic reports from a phone
+TallySeam-Diagnostics-*
+application-logs.jsonl
+crash-reports.json
+performance-metrics.json
 # Screenshots and real receipts (synthetic test fixtures belong in MyMoneyAI/Tests/Fixtures)
 screenshots/
 Screenshots/

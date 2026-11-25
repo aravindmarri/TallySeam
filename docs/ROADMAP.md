@@ -14,4 +14,6 @@
 | 7b. Counts in month & account setup | Count a transaction in another month (early salary); schema 2.0.0 migration; quick setup of cash and cards | **Done:** CI build and tests passing |
 | 8. Statement import & reconciliation | Phases A–E: see docs/STATEMENT_IMPORT.md | **Done:** Phases A–E (run #39) |
 
+| 9. Developer diagnostics | Optional local logs, MetricKit reports, performance times, manual export: see docs/DIAGNOSTICS.md | Code complete; real-device MetricKit check pending |
+
 **Status:** Phases 1–7b compile and pass 236 automated tests on GitHub Actions (run #39). Manual on-device testing is still pending.

@@ -276,6 +276,29 @@ jobs:
             echo "| Size | $SIZE bytes |"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Check that debug-only diagnostic actions are not in the release build
+        run: |
+          BIN=build/verify/Payload/TallySeam.app/TallySeam
+          if strings -a "$BIN" | grep -E "Simulate service failure|Add synthetic crash report"; then
+            echo "::error::Debug-only diagnostic actions are in the release binary"; exit 1
+          fi
+
+      - name: Collect debugging symbols (dSYM)
+        run: |
+          D=build/TallySeam.xcarchive/dSYMs/TallySeam.app.dSYM
+          test -d "$D" || { echo "::error::dSYM missing"; exit 1; }
+          APP_UUID=$(dwarfdump --uuid build/verify/Payload/TallySeam.app/TallySeam | awk '{print $2}')
+          SYM_UUID=$(dwarfdump --uuid "$D" | awk '{print $2}')
+          [ -n "$APP_UUID" ] && [ "$APP_UUID" = "$SYM_UUID" ] || { echo "::error::dSYM $SYM_UUID does not match app $APP_UUID"; exit 1; }
+          echo "::notice title=dSYM verified::uuid=$SYM_UUID, build=${{ github.run_number }}"
+
+      - name: Upload dSYM
+        uses: actions/upload-artifact@v6
+        with:
+          name: TallySeam-dSYM-build${{ github.run_number }}-${{ github.sha }}
+          path: build/TallySeam.xcarchive/dSYMs
+          retention-days: 90
+
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@v6
         with:
