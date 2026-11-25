@@ -238,6 +238,16 @@ final class DiagnosticsTests: XCTestCase {
         XCTAssertEqual(store().metrics()[.reconciliation]?.count, 2)
     }
 
+    func testEndingAnOperationTwiceIsIgnored() {
+        let d = service()
+        d.setPerformance(true)
+        let token = d.begin(.backupCreate)
+        d.end(token)
+        d.end(token, error: LeakyError())
+        XCTAssertEqual(d.performance()[.backupCreate]?.count, 1)
+        XCTAssertFalse(codes(d).contains("BACKUP_500"))
+    }
+
     func testStartupFailureIsLoggedWithoutTheDatabase() {
         let d = service()
         d.end(d.begin(.startup), error: LeakyError())

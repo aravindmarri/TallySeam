@@ -36,7 +36,6 @@ struct OperationToken: Sendable {
     let operation: DiagnosticOperation
     let id: String
     fileprivate let start: ContinuousClock.Instant
-    fileprivate let signpost: OSSignpostIntervalState
     /// Collection session it belongs to; a token from before diagnostics were turned off is ignored.
     fileprivate let generation: Int
 }
@@ -83,6 +82,8 @@ final class DiagnosticsService: AppLogger, @unchecked Sendable {
     private let appVersion: String
     private let buildNumber: String
     private var generation = 0
+    /// Operations still running, by operation id.
+    private var intervals: [String: OSSignpostIntervalState] = [:]
     private var metrics: [DiagnosticOperation: OperationMetrics]?
     private var lastMetricsSave = ContinuousClock.now
     private let signposter = OSSignposter(subsystem: "io.github.aravindmarri.tallyseam", category: "Operations")
@@ -150,8 +151,8 @@ final class DiagnosticsService: AppLogger, @unchecked Sendable {
     func begin(_ operation: DiagnosticOperation) -> OperationToken? {
         locked {
             guard settings.isEnabled else { return nil }
-            let token = OperationToken(operation: operation, id: Self.newOperationId(), start: .now,
-                                       signpost: signposter.beginInterval("Operation", id: signposter.makeSignpostID()), generation: generation)
+            let token = OperationToken(operation: operation, id: Self.newOperationId(), start: .now, generation: generation)
+            intervals[token.id] = signposter.beginInterval("Operation", id: signposter.makeSignpostID())
             if operation.leavesBreadcrumb { leave(.started, token) }
             return token
         }
@@ -159,10 +160,12 @@ final class DiagnosticsService: AppLogger, @unchecked Sendable {
 
     func end(_ token: OperationToken?, error: (any Error)?) {
         guard let token else { return }
-        signposter.endInterval("Operation", token.signpost)
         let elapsed = ContinuousClock.now - token.start
         let ms = max(0, Int(elapsed.components.seconds) * 1_000 + Int(elapsed.components.attoseconds / 1_000_000_000_000_000))
         locked {
+            // Ending an interval twice traps, so each token counts once and a repeated end is ignored.
+            guard let interval = intervals.removeValue(forKey: token.id) else { return }
+            signposter.endInterval("Operation", interval)
             guard settings.isEnabled, token.generation == generation else { return }
             let op = token.operation
             let cancelled = error is CancellationError
