@@ -26,6 +26,9 @@ struct SettingsView: View {
                 Section("Data") {
                     NavigationLink { DataManagementView() } label: { Label("Backup & Data", systemImage: "externaldrive") }
                 }
+                Section("Developer Diagnostics") {
+                    NavigationLink { DeveloperDiagnosticsView() } label: { Label("Developer Diagnostics", systemImage: "stethoscope") }
+                }
                 Section("About") {
                     NavigationLink { PrivacyInfoView() } label: { Label("Privacy", systemImage: "lock.shield") }
                     NavigationLink { AboutDeveloperView() } label: { Label("About the Developer", systemImage: "person.crop.circle") }
@@ -81,6 +84,10 @@ struct PrivacyInfoView: View {
                 Label("Data never leaves this iPhone", systemImage: "iphone")
                 Label("No iCloud sync", systemImage: "icloud.slash")
                 Label("Receipts read on-device with Apple Vision", systemImage: "text.viewfinder")
+            }
+            Section("Optional Diagnostics") {
+                Text("Developer Diagnostics is off unless you turn it on. \(DeveloperDiagnosticsView.privacyText) Records are deleted after 7 days.")
+                    .font(.footnote).foregroundStyle(.secondary)
             }
             Section {
                 Text("TallySeam stores your records in an encrypted-at-rest database protected by iOS Data Protection. It never connects to your bank and never stores full card numbers.")
