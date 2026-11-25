@@ -42,7 +42,6 @@ enum LogCategory: String, Codable, CaseIterable, Identifiable, Sendable {
 enum DiagnosticCode: String, Codable, CaseIterable, Sendable {
     case diagnosticsEnabled = "DIAG_001"
     case appLaunched = "APP_001"
-    case appBackgrounded = "APP_002"
     case startupFailed = "APP_500"
     case databaseOpened = "DB_001"
     case databaseOpenFailed = "DB_500"
@@ -79,7 +78,7 @@ enum DiagnosticCode: String, Codable, CaseIterable, Sendable {
         case .operationCompleted: .debug
         case .startupFailed, .databaseOpenFailed, .migrationFailed: .critical
         case .operationSlow, .documentUnsupported, .aiFallback, .authenticationFailed, .memoryWarning, .testWarning: .warning
-        case .diagnosticsEnabled, .appLaunched, .appBackgrounded, .databaseOpened, .statementParsed, .checkInSaved,
+        case .diagnosticsEnabled, .appLaunched, .databaseOpened, .statementParsed, .checkInSaved,
              .crashReportReceived, .testInfo: .info
         default: .error
         }
@@ -87,7 +86,7 @@ enum DiagnosticCode: String, Codable, CaseIterable, Sendable {
 
     var category: LogCategory {
         switch self {
-        case .diagnosticsEnabled, .appLaunched, .appBackgrounded, .startupFailed, .testInfo, .testWarning, .testError: .lifecycle
+        case .diagnosticsEnabled, .appLaunched, .startupFailed, .testInfo, .testWarning, .testError: .lifecycle
         case .databaseOpened, .databaseOpenFailed, .databaseSaveFailed: .persistence
         case .migrationFailed: .migration
         case .operationCompleted, .operationSlow: .performance
@@ -112,7 +111,6 @@ enum DiagnosticCode: String, Codable, CaseIterable, Sendable {
         switch self {
         case .diagnosticsEnabled: "Diagnostics were enabled"
         case .appLaunched: "Application started"
-        case .appBackgrounded: "Application moved to the background"
         case .startupFailed: "Application failed to start"
         case .databaseOpened: "Database opened"
         case .databaseOpenFailed: "Database could not be opened"

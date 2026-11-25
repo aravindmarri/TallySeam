@@ -44,7 +44,6 @@ struct TallySeamApp: App {
         .onChange(of: scenePhase) { _, phase in
             guard phase == .background else { return }
             DiagnosticsService.shared.flushMetrics()
-            DiagnosticsService.shared.log(.appBackgrounded)
         }
     }
 }
