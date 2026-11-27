@@ -1,9 +1,5 @@
 # TallySeam
 
-> Formerly *MyMoney AI*. TallySeam has its own app ID (`io.github.aravindmarri.tallyseam`), so on an iPhone it
-> installs as a new, empty app next to the old one. To bring your data over, export an encrypted backup from the
-> old app (Settings → Backup & Data) and import it into TallySeam; old backups are still accepted.
-
 An offline, private iPhone app for tracking income, expenses, receipts and bills.
 It is built with SwiftUI, SwiftData, Swift Charts and Apple Vision, targets iOS 17+, and uses no third-party packages, accounts or network access.
 

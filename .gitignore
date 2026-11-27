@@ -54,7 +54,6 @@ temp/
 *.sqlite-wal
 *.db
 # App exports and backups
-*.mymoneyai
 *.mmbackup
 exports/
 # Diagnostic reports from a phone
@@ -62,7 +61,7 @@ TallySeam-Diagnostics-*
 application-logs.jsonl
 crash-reports.json
 performance-metrics.json
-# Screenshots and real receipts (synthetic test fixtures belong in MyMoneyAI/Tests/Fixtures)
+# Screenshots and real receipts (synthetic test fixtures belong in TallySeam/Tests/Fixtures)
 screenshots/
 Screenshots/
 receipts/
@@ -72,8 +71,8 @@ receipts/
 *.heic
 *.HEIC
 !docs/images/**
-!MyMoneyAI/Resources/**
-!MyMoneyAI/Tests/Fixtures/**
+!TallySeam/Resources/**
+!TallySeam/Tests/Fixtures/**
 # Signing, keys and credentials
 *.p12
 *.p8

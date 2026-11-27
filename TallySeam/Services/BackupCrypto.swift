@@ -34,8 +34,8 @@ enum BackupError: Error, Equatable, LocalizedError {
 enum BackupCrypto {
     /// Format tag written into every new backup.
     static let format = "TallySeam-Backup"
-    /// Tags that can still be opened: backups made before the app was renamed (MyMoney AI) can be
-    /// imported into TallySeam.
+    /// Tags that can still be opened: the second is the tag used by early builds, so their
+    /// backups can still be imported.
     static let readableFormats: Set<String> = [format, "MyMoneyAI-Backup"]
     static let version = 1
     static let defaultIterations = 600_000

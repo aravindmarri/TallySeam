@@ -40,7 +40,7 @@ View ──@Query──▶ SwiftData (read)
   | 3.0.0 | Statement import tables (new models only) |
   | 4.0.0 | `StatementTransaction.runningBalance` |
 - **Fixed identifiers:** bundle ID `io.github.aravindmarri.tallyseam`, store file `Application Support/Store/TallySeam.store`,
-  backup tag `TallySeam-Backup` (backups tagged `MyMoneyAI-Backup` from before the rename are still read).
+  backup tag `TallySeam-Backup` (the tag used by early builds is still read).
 
 ## Financial rules
 

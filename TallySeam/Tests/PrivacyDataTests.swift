@@ -253,7 +253,7 @@ final class BackupServiceTests: XCTestCase {
     }
 }
 
-/// Backups made before the rename (MyMoney AI) still open in TallySeam; unknown formats don't.
+/// Backups from early builds still open in TallySeam; unknown formats don't.
 final class BackupFormatCompatibilityTests: XCTestCase {
     func testOldAndNewFormatsOpen() throws {
         let data = Data("synthetic backup".utf8)
